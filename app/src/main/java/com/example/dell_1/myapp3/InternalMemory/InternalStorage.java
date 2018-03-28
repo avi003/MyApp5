@@ -1,5 +1,6 @@
 package com.example.dell_1.myapp3.InternalMemory;
 
+import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.media.MediaScannerConnection;
@@ -43,20 +44,20 @@ import java.util.List;
 
 public class InternalStorage extends AppCompatActivity implements MyRecyclerViewAdapter.ItemClickListener {
     MyRecyclerViewAdapter adapter;
-    MenuItem mSort, mSettings, mRename, mSelectAll, mProperties,mCreate;
-    private ArrayList<String> myList, myList2,selected;
+    MenuItem mSort, mSettings, mRename, mSelectAll, mProperties, mCreate;
+    ArrayList<String> myList, myList2, selected;
     String path = Environment.getExternalStorageDirectory().getAbsolutePath();
     public static boolean selectallflag = false;
     public static boolean cutbuttonclicked = false;
     RecyclerView recyclerView;
-    long result ;
-    String string1,string3,x;
+    long result;
+    String string1, string3, x;
     AlertDialog.Builder alert;
     EditText etRenameFile;
     int fileIndex = 0;
     boolean adapterFlag;
-    boolean askedUserOnce=false;
-    File destination1,f1,file2,dir,currentFile;
+    boolean askedUserOnce = false;
+    File destination1, f1, file2, dir, currentFile;
 
     private static final String TAG = "com.example.dell_1.myapp3.InternalMemory";
     File f = new File(path);//converted string object to file//getting the list of files in string array
@@ -81,16 +82,15 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
         dirStack = new ArrayList<>();
         dirStack.add(f.getAbsolutePath());
 
-//        mFetchFilesTask = new FetchFilesTask();
-//
-//        mFetchFilesTask.execute(f.getAbsolutePath());
+        pd=new ProgressDialog(InternalStorage.this);
 
+        currentpath=f.getAbsolutePath();
         method1(f);
         //method2(f);
 
         // set up the RecyclerView
-        adapterFlag=true;
-       //setAdapter(true);
+        adapterFlag = true;
+        //setAdapter(true);
 
         alert = new AlertDialog.Builder(this);
         etRenameFile = new EditText(getApplicationContext());
@@ -111,40 +111,42 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
 // what ever you want to do with No option.
             }
         });
+        recyclerView = (RecyclerView) findViewById(R.id.rvNumbers);
 
         final ImageButton button3 = (ImageButton) findViewById(R.id.button3);
         final ImageButton button4 = (ImageButton) findViewById(R.id.button4);
         final ImageButton buttoncut = (ImageButton) findViewById(R.id.button1);
         final ImageButton button2 = (ImageButton) findViewById(R.id.button2);
         final ImageButton buttonpaste = (ImageButton) findViewById(R.id.buttonpaste);
+
         buttonpaste.setVisibility(View.GONE);
 
         final Bundle exe = getIntent().getExtras();
-        if(exe != null){
-            f1= new File(exe.getString("DIR_PATH"));
+        if (exe != null) {
+            f1 = new File(exe.getString("DIR_PATH"));
             Log.v(TAG, f1.toString());
-            if(f1.equals(new File("/storage/emulated"))){
-                Intent intent = new Intent(this,Bacon1.class);
+            if (f1.equals(new File("/storage/emulated"))) {
+                Intent intent = new Intent(this, Bacon1.class);
                 startActivity(intent);
             }
 //            mFetchFilesTask.cancel(true);
 //            mFetchFilesTask.execute(f1.getAbsolutePath());
-           // method2(f1);
-           method1(f1);
-            if(cutbuttonclicked){
+            // method2(f1);
+            method1(f1);
+            if (cutbuttonclicked) {
                 button2.setVisibility(View.GONE);
                 button3.setVisibility(View.GONE);
                 button4.setVisibility(View.GONE);
                 buttoncut.setVisibility(View.GONE);
                 buttonpaste.setVisibility(View.VISIBLE);
             }
-            adapterFlag=true;
+            adapterFlag = true;
             //setAdapter(true);
         }
 
         buttonpaste.setOnClickListener(
-                new View.OnClickListener(){
-                    public void onClick(View view){
+                new View.OnClickListener() {
+                    public void onClick(View view) {
 
                         moveItem();
                     }
@@ -184,8 +186,6 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
                     }
 
 
-
-
                 });
 
         button4.setOnClickListener(
@@ -197,8 +197,8 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
         );
     }
 
-    public void OnClick(View view){
-        cutbuttonclicked= true;
+    public void OnClick(View view) {
+        cutbuttonclicked = true;
         final ImageButton button3 = (ImageButton) findViewById(R.id.button3);
         final ImageButton button4 = (ImageButton) findViewById(R.id.button4);
         final ImageButton buttoncut = (ImageButton) findViewById(R.id.button1);
@@ -211,112 +211,98 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
         buttonpaste.setVisibility(View.VISIBLE);
     }
 
-
+    String currentpath="";
     @Override
     public void onItemClick(View view, int position) {
         string1 = adapter.getItem(position);
-        File directory = new File(string1);
-        Log.e(TAG, "onItemClick: " + directory.isDirectory() );
-        if (directory.isDirectory()) {
+        if(!isMultiselected) {
+            File directory = new File(string1);
+            Log.e(TAG, "onItemClick: " + directory.isDirectory());
+            if (directory.isDirectory()) {
 
-            isSelectedInPrev = adapter.getList().size() != 0;
 
-            if (!dirStack.contains(directory.getAbsolutePath()))
-                dirStack.add(directory.getAbsolutePath());
+                if (!dirStack.contains(directory.getAbsolutePath())) {
+                    dirStack.add(directory.getAbsolutePath());
+                    currentpath=directory.getAbsolutePath();
+                }
 
-            ArrayList<String> temp = isSelectedInPrev ? adapter.getList() : null;
+                adapter = null;
+                method1(directory);
 
-//            method1(directory);
-//            method2(directory);
+               // adapterFlag = !isSelectedInPrev;
 
-//            setAdapter(!isSelectedInPrev);
+//                if (isSelectedInPrev)
+//                    adapter.setmSelected(temp);
 
-            method1(directory);
-            //myList2 = method2(directory);
-//            setAdapter(true);
-//            adapter = new MyRecyclerViewAdapter(this, myList, myList2, !isSelectedInPrev);
-//            recyclerView.setAdapter(adapter);
-
-//            mFetchFilesTask.cancel(true);
-//            mFetchFilesTask.execute(directory.getAbsolutePath());
-            adapter = null;
-            adapterFlag=!isSelectedInPrev;
-            //setAdapter(!isSelectedInPrev);
-//            adapter.setmData(myList);
-//            adapter.setmData2(myList2);
-//            adapter.notifyDataSetChanged();
-//            adapter.setClickListener(InternalStorage.this);
-//            Log.e(TAG, "onItemClick: " + adapter.getItemCount() );
-
-            if (isSelectedInPrev)
-                adapter.setmSelected(temp);
-
-        } else if (string1.endsWith(".mp3")) {
-            Intent viewIntent1 = new Intent(Intent.ACTION_VIEW);
-            viewIntent1.setDataAndType(Uri.fromFile(directory), "audio/mpeg");
-            startActivity(Intent.createChooser(viewIntent1, null));
-        } else if (string1.endsWith(".zip")) {
-            Intent viewIntent1 = new Intent(Intent.ACTION_VIEW);
-            viewIntent1.setDataAndType(Uri.fromFile(directory), "application/zip");
-            startActivity(Intent.createChooser(viewIntent1, null));
-        } else if (string1.endsWith(".mp4")) {
-            Intent viewIntent1 = new Intent(Intent.ACTION_VIEW);
-            viewIntent1.setDataAndType(Uri.fromFile(directory), "video/mp4");
-            startActivity(Intent.createChooser(viewIntent1, null));
-        } else if (string1.endsWith(".jpeg")) {
-            Intent viewIntent1 = new Intent(Intent.ACTION_VIEW);
-            viewIntent1.setDataAndType(Uri.fromFile(directory), "image/*");
-            startActivity(Intent.createChooser(viewIntent1, null));
-        } else if (string1.endsWith(".png")) {
-            Intent viewIntent1 = new Intent(Intent.ACTION_VIEW);
-            viewIntent1.setDataAndType(Uri.fromFile(directory), "image/*");
-            startActivity(Intent.createChooser(viewIntent1, null));
-        } else if (string1.endsWith(".pdf")) {
-            Intent viewIntent1 = new Intent(Intent.ACTION_VIEW);
-            viewIntent1.setDataAndType(Uri.fromFile(directory), "application/pdf");
-            startActivity(Intent.createChooser(viewIntent1, null));
-        } else if (string1.endsWith(".apk")) {
-            Intent viewIntent1 = new Intent(Intent.ACTION_VIEW);
-            viewIntent1.setDataAndType(Uri.fromFile(directory), "application/vnd.android.package-archive");
-            startActivity(Intent.createChooser(viewIntent1, null));
-        } else if (string1.endsWith(".txt")) {
-            Intent viewIntent1 = new Intent(Intent.ACTION_VIEW);
-            viewIntent1.setDataAndType(Uri.fromFile(directory), "text/*");
-            startActivity(Intent.createChooser(viewIntent1, null));
-        } else Toast.makeText(this, "unsupported format", Toast.LENGTH_SHORT)
-                .show();
+            } else if (string1.endsWith(".mp3")) {
+                Intent viewIntent1 = new Intent(Intent.ACTION_VIEW);
+                viewIntent1.setDataAndType(Uri.fromFile(directory), "audio/mpeg");
+                startActivity(Intent.createChooser(viewIntent1, null));
+            } else if (string1.endsWith(".zip")) {
+                Intent viewIntent1 = new Intent(Intent.ACTION_VIEW);
+                viewIntent1.setDataAndType(Uri.fromFile(directory), "application/zip");
+                startActivity(Intent.createChooser(viewIntent1, null));
+            } else if (string1.endsWith(".mp4")) {
+                Intent viewIntent1 = new Intent(Intent.ACTION_VIEW);
+                viewIntent1.setDataAndType(Uri.fromFile(directory), "video/mp4");
+                startActivity(Intent.createChooser(viewIntent1, null));
+            } else if (string1.endsWith(".jpeg")) {
+                Intent viewIntent1 = new Intent(Intent.ACTION_VIEW);
+                viewIntent1.setDataAndType(Uri.fromFile(directory), "image/*");
+                startActivity(Intent.createChooser(viewIntent1, null));
+            } else if (string1.endsWith(".png")) {
+                Intent viewIntent1 = new Intent(Intent.ACTION_VIEW);
+                viewIntent1.setDataAndType(Uri.fromFile(directory), "image/*");
+                startActivity(Intent.createChooser(viewIntent1, null));
+            } else if (string1.endsWith(".pdf")) {
+                Intent viewIntent1 = new Intent(Intent.ACTION_VIEW);
+                viewIntent1.setDataAndType(Uri.fromFile(directory), "application/pdf");
+                startActivity(Intent.createChooser(viewIntent1, null));
+            } else if (string1.endsWith(".apk")) {
+                Intent viewIntent1 = new Intent(Intent.ACTION_VIEW);
+                viewIntent1.setDataAndType(Uri.fromFile(directory), "application/vnd.android.package-archive");
+                startActivity(Intent.createChooser(viewIntent1, null));
+            } else if (string1.endsWith(".txt")) {
+                Intent viewIntent1 = new Intent(Intent.ACTION_VIEW);
+                viewIntent1.setDataAndType(Uri.fromFile(directory), "text/*");
+                startActivity(Intent.createChooser(viewIntent1, null));
+            } else Toast.makeText(this, "unsupported format", Toast.LENGTH_SHORT)
+                    .show();
+        }else{
+            //multiselect is on
+            if(!multiselect.contains(myList2.get(position)))
+            multiselect.add(myList2.get(position));
+            else
+                multiselect.remove(myList2.get(position));
+        }
     }
+
+    public void clearMultiSelect(int a){
+        isMultiselected=false;
+        multiselect.clear();
+        fileIndex=0;
+        hideMenuItem();
+
+        if(a==0)
+        Toast.makeText(InternalStorage.this,"Multi Select Cleared", Toast.LENGTH_SHORT).show();
+    }
+
+    boolean isMultiselected=false;
+    ArrayList<String> multiselect=new ArrayList<>();
 
     @Override
     public boolean onLongClick(View view, int position) {
-        fileIndex =position;
+        isMultiselected=true;
+
+        if(!multiselect.contains(myList2.get(position)))
+            multiselect.add(myList2.get(position));
+        else
+            multiselect.remove(myList2.get(position));
+
+        fileIndex = position;
         hideMenuItem();
         return true;
     }
-
-
-
-/*    public ArrayList<String> method2(final File f) {
-
-
-        Runnable runnable=new Runnable() {
-            @Override
-            public void run() {
-                File list2[] = f.listFiles();
-                myList2 = new ArrayList<>();
-                if (list2 != null) {
-                    for (int i = 0; i < list2.length; i++) {
-                        myList2.add(list2[i].getPath());
-                    }
-                } else Toast.makeText(InternalStorage.this, "the folder is empty", Toast.LENGTH_SHORT)
-                        .show();
-            }
-        };
-
-       Thread thread=new Thread(runnable);
-       thread.start();
-        return myList2;
-    }*/
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -342,23 +328,31 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
                 return true;
 
             case R.id.action_newFolder:
-                if(string1==null) {
-                    dir = new File(Environment.getExternalStorageDirectory(), "Folder");
+                String foldername="New Folder";
+                if (string1 == null) {
+
+                    dir = new File(Environment.getExternalStorageDirectory(), foldername);
                     try {
                         if (dir.mkdir()) {
                             Log.v(TAG, "Directory is created");
+                            Toast.makeText(InternalStorage.this,"New Folder created with the name:"
+                                    +foldername,Toast.LENGTH_LONG).show();
                         } else {
+                            Toast.makeText(InternalStorage.this,
+                                    "Directory is not created",Toast.LENGTH_LONG).show();
                             Log.v(TAG, "Directory is not created");
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
-                } else dir = new File(string1,"Folder");
+                } else dir = new File(string1, foldername);
                 try {
                     if (dir.mkdir()) {
-                        Log.v(TAG, "Directory is created");
+                        Toast.makeText(InternalStorage.this,"New Folder created with the name:"
+                                +foldername,Toast.LENGTH_LONG).show();
                     } else {
-                        Log.v(TAG, "Directory is not created");
+                        Toast.makeText(InternalStorage.this,
+                                "Directory is not created",Toast.LENGTH_LONG).show();
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -391,7 +385,7 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
                 return true;
 
             case R.id.action_properties:
-               properties();
+                properties();
                 // location found
                 return true;
 
@@ -400,183 +394,79 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
         }
     }
 
-    private void hideMenuItem(){
+    ///////////// ******* MULTI CLICK HIDE ********** ////////////
+    private void hideMenuItem() {
         mSort.setVisible(false);
         mSettings.setVisible(false);
         mRename.setVisible(true);
         mSelectAll.setVisible(true);
         mProperties.setVisible(true);
         selected = adapter.getList();
-        Log.v(TAG, Integer.toString(selected.size())+ " is the size");
-        if(selected.size()>0){
+        Log.v(TAG, Integer.toString(selected.size()) + " is the size");
+        if (selected.size() > 0) {
             mProperties.setVisible(false);
             mRename.setVisible(false);
         }
     }
 
-    private void properties(){
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        LayoutInflater inflater = this.getLayoutInflater();
-        builder.setMessage("Properties");
-        builder.setView(R.layout.properties);
-        View dialogView = inflater.inflate(R.layout.properties, null);
-        builder.setView(dialogView);
-        TextView displayname = (TextView) dialogView.findViewById(R.id.displayname);
-        TextView displaysize = (TextView) dialogView.findViewById(R.id.displaysize);
-        TextView displaylastmodified = (TextView) dialogView.findViewById(R.id.displaylastmodified);
-        TextView displaydatetaken = (TextView) dialogView.findViewById(R.id.displaydatetaken);
-        TextView displaypath  = (TextView) dialogView.findViewById(R.id.displaypath);
-        for(int i=0;i<selected.size();i++){
-            Log.v(TAG, Integer.toString(selected.size())+ " is the final size");
-            if(selected.size()>0) {
-                Log.v(TAG, Integer.toString(selected.size()));
-                File file = new File(myList2.get(Integer.parseInt(selected.get(i))));
-                String strFileName = file.getName();
-                displayname.setText(strFileName);
-                Date lastModified = new Date(file.lastModified());
-                SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-                String formattedDateString = formatter.format(lastModified);
-                displaylastmodified.setText(formattedDateString);
-                displaydatetaken.setText(formattedDateString);
-                String path = myList2.get(Integer.parseInt(selected.get(i)));
-                displaypath.setText(path);
-                if (file.isFile()) {
-                    float fileSizeInBytes = file.length();
-                    String calString = Float.toString(fileSizeInBytes);
-                    displaysize.setText(calString + " bytes");
-                    Log.v(TAG, Long.toString(file.length()));
-                    if (fileSizeInBytes > 1024) {
-                        float fileSizeInKB = fileSizeInBytes / 1024;
-                        String calString2 = Float.toString(fileSizeInKB);
-                        displaysize.setText(calString2 + " KB");
-                        if (fileSizeInKB > 1024) {
-                            float fileSizeInMB = fileSizeInKB / 1024;
-                            String calString3 = Float.toString(fileSizeInMB);
-                            displaysize.setText(calString3 + " MB");
-                        }
-                    }
-                }
-                else if(file.isDirectory()){
-                    result = 0;
-                    final List<File> dirs = new LinkedList<>();
-                    dirs.add(file);
-                    while (!dirs.isEmpty()) {
-                        final File dir = dirs.remove(0);
-                        if (!dir.exists())
-                            continue;
-                        final File[] listFiles = dir.listFiles();
-                        if (listFiles == null || listFiles.length == 0)
-                            continue;
-                        for (final File child : listFiles) {
-                            result += child.length();
-                            if (child.isDirectory())
-                                dirs.add(child);
-                        }
-                    }
-                    float fileSizeInBytes = result;
-                    String calString = Float.toString(fileSizeInBytes);
-                    displaysize.setText(calString + " bytes");
-                    if (fileSizeInBytes > 1024) {
-                        float fileSizeInKB = fileSizeInBytes / 1024;
-                        String calString2 = Float.toString(fileSizeInKB);
-                        displaysize.setText(calString2 + " KB");
-                        if (fileSizeInKB > 1024) {
-                            float fileSizeInMB = fileSizeInKB / 1024;
-                            String calString3 = Float.toString(fileSizeInMB);
-                            displaysize.setText(calString3 + " MB");
-                        }
-                    }
-                }
-            }
-        }
-        AlertDialog alert12 = builder.create();
-        alert12.show();
-    }
+
 
     @Override
     public void onBackPressed() {
 
-        String currpath = null;
+        if(!isMultiselected) {
+            String currpath = null;
 
-        if (dirStack.size() == 0 || dirStack.size() ==1)
-            finish();
-        else{
-            currpath = dirStack.get(dirStack.size() - 2);
-            dirStack.remove(currpath);
+            if (dirStack.size() == 0 || dirStack.size() == 1)
+                finish();
+            else {
+                currpath = dirStack.get(dirStack.size() - 2);
+                dirStack.remove(currpath);
 
-//            mFetchFilesTask.cancel(true);
-//            mFetchFilesTask.execute(currpath);
-            method1(new File(currpath));
-            //myList2 = method2(new File(currpath));
-            //adapter.notifyDataSetChanged();
-            Log.e(TAG, "onBackPressed: "+ dirStack.size() + "**"+currpath );
-            adapterFlag=true;
-            //setAdapter(true);
-//            adapter = new MyRecyclerViewAdapter(this, myList, myList2, true);
-//            recyclerView.setAdapter(adapter);
+                method1(new File(currpath));
+
+                Log.e(TAG, "onBackPressed: " + dirStack.size() + "**" + currpath);
+                adapterFlag = true;
+            }
+        }else{
+            clearMultiSelect(0);
+            method1(new File(currentpath));
         }
 
-        //
-//        if(string1==null){
-////            Intent intent = new Intent(this,Bacon1.class);
-////            startActivity(intent);
-//            finish();
-//            Log.v(TAG,"gets done");
-//            return;
-//        }
-//        else if(f1==null) {
-//            selectallflag = false;
-//            file2 = new File(string1).getParentFile();
-//            string3 = file2.getAbsolutePath();
-//            String previousDir = string3;
-//            if (previousDir != null) { //if deferent root path
-//                Intent activityDir = new Intent(this, InternalStorage.class);
-//                activityDir.putExtra("DIR_PATH", previousDir);
-//                startActivity(activityDir);
-//                Log.v(TAG, "great");
-//            } else Log.v(TAG, "Fuck off");
-//        }
-//            else file2 = f1.getParentFile();
-//        string3 = file2.getAbsolutePath();
-//        String previousDir = string3;
-//        if (previousDir != null) { //if deferent root path
-//            Intent activityDir = new Intent(this, InternalStorage.class);
-//            activityDir.putExtra("DIR_PATH", previousDir);
-//            startActivity(activityDir);
-//            Log.v(TAG, "great");
-//        } else Log.v(TAG, "Fuck off");
-//        finish();
     }
 
 
-    private void setAdapter(boolean enableSelection){
-        recyclerView = (RecyclerView) findViewById(R.id.rvNumbers);
+    private void setAdapter(boolean enableSelection) {
         int numberOfColumns = 4;
         recyclerView.setHasFixedSize(true);
         recyclerView.setItemViewCacheSize(50);
         recyclerView.setDrawingCacheEnabled(true);
         recyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_LOW);
         recyclerView.setLayoutManager(new GridLayoutManager(this, numberOfColumns));
-        adapter = new MyRecyclerViewAdapter(this, myList, myList2, enableSelection);
+        adapter = new MyRecyclerViewAdapter(this, myList, myList2,
+                enableSelection,InternalStorage.this);
         adapter.setClickListener(this);
+
         recyclerView.setAdapter(adapter);
     }
 
-    private void moveItem(){
-        selected= adapter.getList();
-        Log.v(TAG,"moveitem" + Integer.toString(selected.size()));
+
+    /////////////*************** MOVING AND PASTING ****************************************** ///////////////////
+    private void moveItem() {
+        selected = adapter.getList();
+        Log.v(TAG, "moveitem" + Integer.toString(selected.size()));
         for (int i = 0; i < selected.size(); i++) {
-                File source1 = new File(selected.get(i));
-                destination1 = new File(string1 + File.separator + source1.getName());
-                try {
-                    moveFile(source1, destination1, false);
-                    notifyMediaStoreScanner(destination1);
-                    myList.add(destination1.getName());
-                    myList2.add(destination1.getAbsolutePath());
-                    adapter.notifyDataSetChanged();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+            File source1 = new File(selected.get(i));
+            destination1 = new File(string1 + File.separator + source1.getName());
+            try {
+                moveFile(source1, destination1, false);
+                notifyMediaStoreScanner(destination1);
+                myList.add(destination1.getName());
+                myList2.add(destination1.getAbsolutePath());
+                adapter.notifyDataSetChanged();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
 
         final ImageButton button3 = (ImageButton) findViewById(R.id.button3);
@@ -626,6 +516,8 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
             }
         }
     }
+/////////////*************** MOVING AND PASTING ****************************************** ///////////////////
+
 
     public final void notifyMediaStoreScanner(File file) {
 //        try {
@@ -640,10 +532,10 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
 //        }
     }
 
-    private void renameFileAlert(){
+    private void renameFileAlert() {
 
         String renameFile = etRenameFile.getText().toString();
-        String filename= myList.get(fileIndex);
+        String filename = myList.get(fileIndex);
 
         File oldFilePath = new File(myList2.get(fileIndex));
 // Log.d("OLDFILEPATH", oldFilePath.toString());
@@ -657,35 +549,35 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
         boolean isSuccess = oldFilePath.renameTo(renamedFile);
 
         //check if the file was renamed
-        if (isSuccess){
+        if (isSuccess) {
             myList2.set(fileIndex, renamedFile.getAbsolutePath());
             myList.set(fileIndex, renamedFile.getName());
 //            adapter.notifyDataSetChanged();
 //            notify the adapter that the file is renamed
             adapter.notifyItemChanged(fileIndex);
             mRename.setVisible(false);
-        }else
+        } else
             Toast.makeText(this, "There was an error in renaming the file", Toast.LENGTH_SHORT).show();
 
-        Log.e(TAG, "renameFileAlert: "+renamedFile.getPath() );
+        Log.e(TAG, "renameFileAlert: " + renamedFile.getPath());
 
         notifyMediaStoreScanner(renamedFile);
 
     }
 
+    //SORT BY NAME DATE ETC THE FILE SYSTEM
     private void showRadioButtonDialog() {
 
-        final CharSequence[] items = {" Name "," Date taken"," Size "," last modified "};
+        final CharSequence[] items = {" Name ", " Date taken", " Size ", " last modified "};
         final CharSequence[] items2 = {" Only for this folder"};
-        final ArrayList seletedItems=new ArrayList();
+        final ArrayList seletedItems = new ArrayList();
         // custom dialog
         final AlertDialog.Builder builder2 = new AlertDialog.Builder(InternalStorage.this);
         builder2.setTitle("SORT BY");
 
         builder2.setSingleChoiceItems(items, -1, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int item) {
-                switch(item)
-                {
+                switch (item) {
                     case 0:
                         // Your code when first option seletced
                         break;
@@ -712,70 +604,27 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
 
     }
 
-
-
+    ProgressDialog pd;
+    //Load the contents of the directory
     public void method1(final File f) {
-        currentFile=f;
-        MethodOneTask methodOneTask=new MethodOneTask(getApplicationContext());
+
+        pd.setMessage("Please Wait...");
+        pd.setCancelable(true);
+        pd.show();
+        currentFile = f;
+        MethodOneTask methodOneTask = new MethodOneTask(getApplicationContext());
         methodOneTask.execute(f);
-
-
-       /* Runnable runnable=new Runnable() {
-
-            @Override
-            public void run() {
-
-                File list2[] = f.listFiles();
-
-                myList = new ArrayList<>();
-                myList2 = new ArrayList<>();
-
-                if (list2 != null) {
-                    for (int i = 0; i < list2.length; i++) {
-                        myList.add(list2[i].getName());
-                        myList2.add(list2[i].getPath());
-                    }
-                } else Toast.makeText(InternalStorage.this, "the folder is empty", Toast.LENGTH_SHORT)
-                        .show();
-
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-
-                        if(adapter==null){
-                            setAdapter(adapterFlag);
-
-                        }
-
-                        else{
-                            adapter.notifyDataSetChanged();
-
-                        }
-                    }
-                });
-
-            }
-
-
-        };
-        Thread thread=new Thread(runnable);
-        thread.start();*/
     }
-
-
-
-
-
 
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onMessageEvent(ArrayEvent event) {
-        myList=event.getArrayListModel().getNameList();
-        myList2=event.getArrayListModel().getPathList();
+        myList = event.getArrayListModel().getNameList();
+        myList2 = event.getArrayListModel().getPathList();
         setAdapter(adapterFlag);
+        pd.dismiss();
 
     }
-
 
 
     @Override
@@ -791,6 +640,82 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
     }
 
 
-
-
+///////////// ************* PROPERTIES ************ //////////////////////////
+    private void properties() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        LayoutInflater inflater = this.getLayoutInflater();
+        builder.setMessage("Properties");
+        builder.setView(R.layout.properties);
+        View dialogView = inflater.inflate(R.layout.properties, null);
+        builder.setView(dialogView);
+        TextView displayname = (TextView) dialogView.findViewById(R.id.displayname);
+        TextView displaysize = (TextView) dialogView.findViewById(R.id.displaysize);
+        TextView displaylastmodified = (TextView) dialogView.findViewById(R.id.displaylastmodified);
+        TextView displaydatetaken = (TextView) dialogView.findViewById(R.id.displaydatetaken);
+        TextView displaypath = (TextView) dialogView.findViewById(R.id.displaypath);
+        for (int i = 0; i < selected.size(); i++) {
+            Log.v(TAG, Integer.toString(selected.size()) + " is the final size");
+            if (selected.size() > 0) {
+                Log.v(TAG, Integer.toString(selected.size()));
+                File file = new File(myList2.get(Integer.parseInt(selected.get(i))));
+                String strFileName = file.getName();
+                displayname.setText(strFileName);
+                Date lastModified = new Date(file.lastModified());
+                SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+                String formattedDateString = formatter.format(lastModified);
+                displaylastmodified.setText(formattedDateString);
+                displaydatetaken.setText(formattedDateString);
+                String path = myList2.get(Integer.parseInt(selected.get(i)));
+                displaypath.setText(path);
+                if (file.isFile()) {
+                    float fileSizeInBytes = file.length();
+                    String calString = Float.toString(fileSizeInBytes);
+                    displaysize.setText(calString + " bytes");
+                    Log.v(TAG, Long.toString(file.length()));
+                    if (fileSizeInBytes > 1024) {
+                        float fileSizeInKB = fileSizeInBytes / 1024;
+                        String calString2 = Float.toString(fileSizeInKB);
+                        displaysize.setText(calString2 + " KB");
+                        if (fileSizeInKB > 1024) {
+                            float fileSizeInMB = fileSizeInKB / 1024;
+                            String calString3 = Float.toString(fileSizeInMB);
+                            displaysize.setText(calString3 + " MB");
+                        }
+                    }
+                } else if (file.isDirectory()) {
+                    result = 0;
+                    final List<File> dirs = new LinkedList<>();
+                    dirs.add(file);
+                    while (!dirs.isEmpty()) {
+                        final File dir = dirs.remove(0);
+                        if (!dir.exists())
+                            continue;
+                        final File[] listFiles = dir.listFiles();
+                        if (listFiles == null || listFiles.length == 0)
+                            continue;
+                        for (final File child : listFiles) {
+                            result += child.length();
+                            if (child.isDirectory())
+                                dirs.add(child);
+                        }
+                    }
+                    float fileSizeInBytes = result;
+                    String calString = Float.toString(fileSizeInBytes);
+                    displaysize.setText(calString + " bytes");
+                    if (fileSizeInBytes > 1024) {
+                        float fileSizeInKB = fileSizeInBytes / 1024;
+                        String calString2 = Float.toString(fileSizeInKB);
+                        displaysize.setText(calString2 + " KB");
+                        if (fileSizeInKB > 1024) {
+                            float fileSizeInMB = fileSizeInKB / 1024;
+                            String calString3 = Float.toString(fileSizeInMB);
+                            displaysize.setText(calString3 + " MB");
+                        }
+                    }
+                }
+            }
+        }
+        AlertDialog alert12 = builder.create();
+        alert12.show();
+    }
 }

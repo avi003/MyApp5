@@ -21,6 +21,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.example.dell_1.myapp3.R;
@@ -33,35 +34,41 @@ import static com.example.dell_1.myapp3.InternalMemory.InternalStorage.selectall
 
 public class MyRecyclerViewAdapter extends RecyclerView.Adapter<MyRecyclerViewAdapter.ViewHolder> {
 
-    private final boolean enableSelection;
+    private boolean enableSelection;
     private ArrayList<String> mData;
     private ArrayList<String> mData2;
     private LayoutInflater mInflater;
-    private int selected_position ;
+    private int selected_position;
     private ItemClickListener mClickListener;
-    private ArrayList<String> mSelected ;
     ArrayList<Uri> files = new ArrayList<>();
     Uri uri;
     private static final String TAG = "com.example.dell_1.myapp3.InternalMemory";
     private Context context;
-
+    InternalStorage internal_activity=null;
     // data is passed into the constructor
     public MyRecyclerViewAdapter(Context context, ArrayList<String> data, ArrayList<String> data2, boolean enableSelection) {
         this.mInflater = LayoutInflater.from(context);
         this.mData = data;
         this.mData2 = data2;
         this.context = context;
-        this.mSelected = new ArrayList<>();
+        this.internal_activity.multiselect = new ArrayList<>();
         this.enableSelection = enableSelection;
+    }
+    public MyRecyclerViewAdapter(Context context, ArrayList<String> data, ArrayList<String> data2,
+                                 boolean enableSelection, InternalStorage activity_Internal) {
+        this.mInflater = LayoutInflater.from(context);
+        this.mData = data;
+        this.mData2 = data2;
+        this.context = context;
+        this.enableSelection = enableSelection;
+        internal_activity=activity_Internal;
     }
 
     public void setmData(ArrayList<String> mData) {
         this.mData = mData;
     }
 
-    public void setmSelected(ArrayList<String> mSelected) {
-        this.mSelected = mSelected;
-    }
+
 
     public void setmData2(ArrayList<String> mData2) {
         this.mData2 = mData2;
@@ -74,71 +81,6 @@ public class MyRecyclerViewAdapter extends RecyclerView.Adapter<MyRecyclerViewAd
         return new ViewHolder(view);
     }
 
-    // binds the data to the textview in each cell
-    @Override
-    public void onBindViewHolder(ViewHolder holder, int position) {
-        String animal = mData.get(position);
-//        int THUMBSIZE = 150;
-//        Bitmap ThumbImage = ThumbnailUtils.extractThumbnail(BitmapFactory.decodeFile(animal2),
-//                THUMBSIZE, THUMBSIZE);
-//        Bitmap thumb = ThumbnailUtils.createVideoThumbnail(animal2, MediaStore.Video.Thumbnails.MINI_KIND);
-        String animal2 = mData2.get(position);
-        holder.myTextView.setText(animal + "");
-            if(animal!= null && (animal.endsWith(".mp3") || animal.endsWith(".aac"))){
-                holder.myImage.setImageResource(R.drawable.song);
-            }
-        else if(animal!= null && animal.endsWith(".pdf")){
-            holder.myImage.setImageResource(R.drawable.pdficon2);
-        }
-
-        else if(animal!= null && (animal.endsWith(".jpeg") || animal.endsWith(".jpg") || animal.endsWith(".png"))) {//&& BitmapFactory.decodeFile(animal2)!=null ){
-//                holder.myImage.setImageBitmap(ThumbImage);
-
-                //Log.e(TAG, "onBindViewHolder: "+ mData2.get(position) );
-
-                Glide.with(context).load(mData2.get(position)).override(100,100).into(holder.myImage);
-
-        }
-
-
-            else if(animal!= null && animal.endsWith(".mp4")){
-//                holder.myImage.setImageBitmap(thumb);
-
-                Glide.with(context).load(mData2.get(position)).fitCenter().into(holder.myImage);
-
-            }
-
-            else if(animal!= null && animal.endsWith(".zip")){
-                holder.myImage.setImageResource(R.drawable.zip);
-            }
-            else if(animal!= null && animal.endsWith(".txt")){
-                holder.myImage.setImageResource(R.drawable.text);
-            }
-
-
-           else if(animal!= null && animal.endsWith(".apk")){
-            PackageInfo packageInfo = context.getPackageManager()
-                    .getPackageArchiveInfo(animal2, PackageManager.GET_ACTIVITIES);
-            if(packageInfo != null) {
-                ApplicationInfo appInfo = packageInfo.applicationInfo;
-                    appInfo.sourceDir = animal2;
-                    appInfo.publicSourceDir = animal2;
-                Drawable icon = appInfo.loadIcon(context.getPackageManager());
-                Bitmap bmpIcon = ((BitmapDrawable) icon).getBitmap();
-                holder.myImage.setImageBitmap(bmpIcon);
-            }
-
-        }
-            else {
-                holder.myImage.setImageResource(R.drawable.folder);
-            }
-
-        if(selectallflag){
-            holder.itemView.setBackgroundColor(Color.MAGENTA);
-            }
-        }
-
-
     // total number of cells
     @Override
     public int getItemCount() {
@@ -150,6 +92,7 @@ public class MyRecyclerViewAdapter extends RecyclerView.Adapter<MyRecyclerViewAd
     public class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener, View.OnLongClickListener {
         TextView myTextView;
         ImageButton myImage;
+
         ViewHolder(View itemView) {
             super(itemView);
             myImage = (ImageButton) itemView.findViewById(R.id.buttonimage);
@@ -160,31 +103,44 @@ public class MyRecyclerViewAdapter extends RecyclerView.Adapter<MyRecyclerViewAd
 
         @Override
         public void onClick(View view) {
+            selected_position = getAdapterPosition();
+
+
+            if(internal_activity.isMultiselected && internal_activity!=null){
+                if(internal_activity.multiselect.contains(mData2.get(selected_position))){
+                    itemView.setBackgroundColor(Color.TRANSPARENT);
+                }else{
+                    itemView.setBackgroundColor(Color.LTGRAY);
+                }
+            }
             if (mClickListener != null) mClickListener.onItemClick(view, getAdapterPosition());
         }
 
         @Override
         public boolean onLongClick(View view) {
 
-            if (enableSelection) {
+            internal_activity.isMultiselected=true;
+            if (internal_activity.isMultiselected) {
 
-                if (mClickListener != null) mClickListener.onLongClick(view, getAdapterPosition());
+
+
                 selected_position = getAdapterPosition();
-                if (mSelected.contains(mData2.get(selected_position))) {
-                    mSelected.remove(mData2.get(selected_position));
+                if (internal_activity.multiselect.contains(mData2.get(selected_position))) {
+                   // internal_activity.multiselect.remove(mData2.get(selected_position));
                     itemView.setBackgroundColor(Color.TRANSPARENT);// remove item from list;
                     // update view (v) state here
                     // eg: remove highlight
                 } else {
-                    mSelected.add(mData2.get(selected_position));
+                   // internal_activity.multiselect.add(mData2.get(selected_position));
                     itemView.setBackgroundColor(Color.LTGRAY);
                     // add item to list
                     // update view (v) state here
                     // eg: add highlight
                 }
+                if (mClickListener != null) mClickListener.onLongClick(view, getAdapterPosition());
             }
-            Log.v(TAG, Integer.toString(mSelected.size()) + " this is size");
-            return  true;
+            Log.v(TAG, Integer.toString(internal_activity.multiselect.size()) + " this is size");
+            return true;
         }
     }
 
@@ -201,83 +157,131 @@ public class MyRecyclerViewAdapter extends RecyclerView.Adapter<MyRecyclerViewAd
     // parent activity will implement this method to respond to click events
     public interface ItemClickListener {
         void onItemClick(View view, int position);
-        boolean onLongClick(View view,int position);
+
+        boolean onLongClick(View view, int position);
     }
 
     protected void deleteItem() {
-
-
-
-                for (int i = 0; i < mSelected.size(); i++) {
-                    Log.v(TAG, mSelected.get(i));
-//            Log.v(TAG, mData2mSelected.get(i));
-                    File file = new File(mSelected.get(i));
-                    if(file.isDirectory()){
-                        String[] children = file.list();
-                        for (int j = 0; j < children.length; j++)
-                        {
-                            new File(file, children[i]).delete();
-//                    mData2.remove(mSelected.get(i));
-                        }
-                    }
-                    Log.v(TAG, file.toString());
-                    file.delete();
-                    mData2.remove(mSelected.get(i));
-                    MediaScannerConnection.scanFile(context,new String[] { file.toString() }, null, new MediaScannerConnection.OnScanCompletedListener()
-                    {
-                        public void onScanCompleted(String path, Uri uri)
-                        {
-                            Log.i("ZAA", "Scanned " + path + ":");
-                            Log.i("ZAA", "-> uri=" + uri);
-                        }
-                    });
+        for (int i = 0; i < internal_activity.multiselect.size(); i++) {
+            Log.v(TAG, internal_activity.multiselect.get(i));
+//            Log.v(TAG, mData2internal_activity.multiselect.get(i));
+            File file = new File(internal_activity.multiselect.get(i));
+            if (file.isDirectory()) {
+                String[] children = file.list();
+                for (int j = 0; j < children.length; j++) {
+                    new File(file, children[i]).delete();
+//                    mData2.remove(internal_activity.multiselect.get(i));
                 }
+            }
+            Log.v(TAG, file.toString());
+            file.delete();
 
-                notifyDataSetChanged();
+            mData2.remove(internal_activity.multiselect.get(i));
+            internal_activity.myList2.remove(internal_activity.multiselect.get(i));
 
+            MediaScannerConnection.scanFile(context, new String[]{file.toString()}, null, new MediaScannerConnection.OnScanCompletedListener() {
+                public void onScanCompleted(String path, Uri uri) {
+                    Log.i("ZAA", "Scanned " + path + ":");
+                    Log.i("ZAA", "-> uri=" + uri);
+                }
+            });
+        }
+        Toast.makeText(context,"Successfully Deleted", Toast.LENGTH_LONG).show();
+        internal_activity.clearMultiSelect(1);
 
-
-
+        notifyDataSetChanged();
 
 
     }
 
-    protected void shareItem(View v){
+    protected void shareItem(View v) {
 
         Intent share = new Intent(Intent.ACTION_SEND_MULTIPLE);
         share.setType("*/*");
-        for (int i = 0; i < mSelected.size(); i++) {
-            Log.v(TAG, mSelected.get(i));
-//            Log.v(TAG, mData2.get(Integer.parseInt(mSelected.get(i))));
-            File file = new File(mData2.get(Integer.parseInt(mSelected.get(i))));
+        for (int i = 0; i < internal_activity.multiselect.size(); i++) {
+            Log.v(TAG, internal_activity.multiselect.get(i));
+//            Log.v(TAG, mData2.get(Integer.parseInt(internal_activity.multiselect.get(i))));
+            File file = new File(mData2.get(Integer.parseInt(internal_activity.multiselect.get(i))));
             Uri uri = Uri.fromFile(file);
             files.add(uri);
         }
-            share.putParcelableArrayListExtra(Intent.EXTRA_STREAM, files);
-            v.getContext().startActivity(Intent.createChooser(share, "Share file"));
+        share.putParcelableArrayListExtra(Intent.EXTRA_STREAM, files);
+        v.getContext().startActivity(Intent.createChooser(share, "Share file"));
 
     }
 
     protected void selectAll() {
-            mSelected.addAll(mData2);
-            Log.v(TAG, Integer.toString(mSelected.size()));
-        }
+        internal_activity.multiselect.addAll(mData2);
+        Log.v(TAG, Integer.toString(internal_activity.multiselect.size()));
+    }
 
-        protected  ArrayList<String>  getList(){
-        /*    for(String im : mSelected){
+    protected ArrayList<String> getList() {
+        /*    for(String im : internal_activity.multiselect){
                 Log.v(TAG, im + " print");
             }
-            Log.v(TAG,Integer.toString(mSelected.size()) + "  final size");*/
-            return mSelected;
+            Log.v(TAG,Integer.toString(internal_activity.multiselect.size()) + "  final size");*/
+        return internal_activity.multiselect;
+    }
+
+    protected Uri getUri() {
+        for (int i = 0; i < internal_activity.multiselect.size(); i++) {
+            uri = Uri.fromFile(new File(mData2.get(Integer.parseInt(internal_activity.multiselect.get(i)))));
+            Log.v(TAG, uri.toString() + " uri");
+        }
+        return uri;
+    }
+
+    // binds the data to the textview in each cell
+    @Override
+    public void onBindViewHolder(ViewHolder holder, int position) {
+        String animal = mData.get(position);
+//        int THUMBSIZE = 150;
+//        Bitmap ThumbImage = ThumbnailUtils.extractThumbnail(BitmapFactory.decodeFile(animal2),
+//                THUMBSIZE, THUMBSIZE);
+//        Bitmap thumb = ThumbnailUtils.createVideoThumbnail(animal2, MediaStore.Video.Thumbnails.MINI_KIND);
+        String animal2 = mData2.get(position);
+        holder.myTextView.setText(animal + "");
+        if (animal != null && (animal.endsWith(".mp3") || animal.endsWith(".aac"))) {
+            holder.myImage.setImageResource(R.drawable.song);
+        } else if (animal != null && animal.endsWith(".pdf")) {
+            holder.myImage.setImageResource(R.drawable.pdficon2);
+        } else if (animal != null && (animal.endsWith(".jpeg") || animal.endsWith(".jpg") || animal.endsWith(".png"))) {//&& BitmapFactory.decodeFile(animal2)!=null ){
+//                holder.myImage.setImageBitmap(ThumbImage);
+
+            //Log.e(TAG, "onBindViewHolder: "+ mData2.get(position) );
+
+            Glide.with(context).load(mData2.get(position)).override(100, 100).into(holder.myImage);
+
+        } else if (animal != null && animal.endsWith(".mp4")) {
+//                holder.myImage.setImageBitmap(thumb);
+
+            Glide.with(context).load(mData2.get(position)).fitCenter().into(holder.myImage);
+
+        } else if (animal != null && animal.endsWith(".zip")) {
+            holder.myImage.setImageResource(R.drawable.zip);
+        } else if (animal != null && animal.endsWith(".txt")) {
+            holder.myImage.setImageResource(R.drawable.text);
+        } else if (animal != null && animal.endsWith(".apk")) {
+            PackageInfo packageInfo = context.getPackageManager()
+                    .getPackageArchiveInfo(animal2, PackageManager.GET_ACTIVITIES);
+            if (packageInfo != null) {
+                ApplicationInfo appInfo = packageInfo.applicationInfo;
+                appInfo.sourceDir = animal2;
+                appInfo.publicSourceDir = animal2;
+                Drawable icon = appInfo.loadIcon(context.getPackageManager());
+                Bitmap bmpIcon = ((BitmapDrawable) icon).getBitmap();
+                holder.myImage.setImageBitmap(bmpIcon);
+            }
+
+        } else {
+            holder.myImage.setImageResource(R.drawable.folder);
         }
 
-        protected Uri getUri() {
-            for (int i = 0; i < mSelected.size(); i++) {
-                uri = Uri.fromFile(new File(mData2.get(Integer.parseInt(mSelected.get(i)))));
-                Log.v(TAG, uri.toString() +" uri");
-            }
-            return uri;
+        if (selectallflag) {
+            holder.itemView.setBackgroundColor(Color.MAGENTA);
         }
+    }
+
 
 
 }
