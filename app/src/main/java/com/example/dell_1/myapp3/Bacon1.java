@@ -3,51 +3,30 @@ package com.example.dell_1.myapp3;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.app.Activity;
-import android.os.Environment;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.view.View;
-import android.widget.Button;
 import android.widget.Toast;
 
-import com.example.dell_1.myapp3.APK.AllAppsActivity;
-import com.example.dell_1.myapp3.ImageViewer.ImageGallery;
-import com.example.dell_1.myapp3.MusicPlayer.PlayListActivity;
-import com.example.dell_1.myapp3.PDF.MainActivity1;
-import com.example.dell_1.myapp3.VideoPlayer.SDVideos;
-
-import java.io.File;
+import com.example.dell_1.myapp3.InternalMemory.InternalStorage;
+import com.example.dell_1.myapp3.InternalMemory.SDCard;
 
 
 public class Bacon1 extends Activity {
 
     private static final int MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE = 1;
     private static int RESULT_LOAD_IMAGE = 1;
+    private int buttonType =0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bacon1);
 
-
-        Button button4 = (Button) findViewById(R.id.button4);
-
-        button4.setOnClickListener(
-                new Button.OnClickListener()
-
-                {
-                    public void onClick(View v) {
-                        buttonClicked(v);
-
-                        Intent p = new Intent(Bacon1.this, PlayListActivity.class);
-                        startActivity(p);
-
-                    }
-                });
     }
 
     private void buttonClicked(View view) {
@@ -79,43 +58,46 @@ public class Bacon1 extends Activity {
     }
 
 
-    public void onClick2(View view) {
 
+    public void onClick(View view) {
         buttonClicked(view);
-        Intent viewIntent2 = new Intent(this, ImageGallery.class);
-        startActivity(viewIntent2);
+        buttonType=1;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if ((checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)){
+            Intent viewIntent2 = new Intent(this, InternalStorage.class);
+            startActivity(viewIntent2);
+            }
+
+            else {
+                //Toast.makeText(this,"Please allow to access storage",Toast.LENGTH_SHORT).show();
+            }
+        }
+        else {
+            Intent viewIntent2 = new Intent(this, InternalStorage.class);
+            startActivity(viewIntent2);
+        }
+
     }
 
-
-    public void onClick4(View view) {
-
+    public void onClick1(View view) {
         buttonClicked(view);
-        Intent viewIntent1 = new Intent(this, SDVideos.class);
-        startActivity(viewIntent1);
-    }
+        buttonType =2;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if ((checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)){
 
-    public void onClick5(View view) {
+            Intent viewIntent2 = new Intent(this, SDCard.class);
+            startActivity(viewIntent2);}
+            else {
+               // Toast.makeText(this,"Please allow to access storage",Toast.LENGTH_SHORT).show();
+            }
+        }
 
-        Intent viewIntent1 = new Intent(Intent.ACTION_VIEW);
-        File file = new File(Environment.getExternalStoragePublicDirectory(Environment.getExternalStorageDirectory() + "/myapp") + "/" + "downloadedfile.zip");
-        viewIntent1.setDataAndType(Uri.fromFile(file), "application/zip");
-        startActivity(Intent.createChooser(viewIntent1, null));
-    }
-
-    public void onClick6(View view) {
-
-        buttonClicked(view);
-        Intent viewIntent1 = new Intent(this, MainActivity1.class);
-        startActivity(viewIntent1);
+        else {
+            Intent viewIntent2 = new Intent(this, SDCard.class);
+            startActivity(viewIntent2);
+        }
 
     }
-
-    public void onClick7(View view) {
-
-        Intent viewIntent1 = new Intent(this,AllAppsActivity.class);
-        startActivity(viewIntent1);
-    }
-
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
@@ -126,7 +108,17 @@ public class Bacon1 extends Activity {
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     Toast.makeText(Bacon1.this, "WRITE_CONTACTS granted", Toast.LENGTH_SHORT)
                             .show();
+                    switch (buttonType){
+                        case 1:
+                            Intent viewIntent = new Intent(this, InternalStorage.class);
+                            startActivity(viewIntent);
+                            break;
+                        case 2:
+                            Intent viewIntent2 = new Intent(this, SDCard.class);
+                            startActivity(viewIntent2);
+                            break;
 
+                    }
 
                 } else {
 
@@ -141,12 +133,12 @@ public class Bacon1 extends Activity {
             // permissions this app might request
         }
     }
+
+
+
+
+
+
+
+
 }
-
-
-
-
-
-
-
-
