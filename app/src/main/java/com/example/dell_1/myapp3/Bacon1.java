@@ -6,14 +6,23 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.app.Activity;
+import android.os.Environment;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
 import com.example.dell_1.myapp3.InternalMemory.InternalStorage;
 import com.example.dell_1.myapp3.InternalMemory.SDCard;
+import com.example.dell_1.myapp3.InternalMemory.SdCardFunctionality;
+
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
 
 
 public class Bacon1 extends Activity {
@@ -27,7 +36,10 @@ public class Bacon1 extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bacon1);
 
+
     }
+
+
 
     private void buttonClicked(View view) {
         if (ContextCompat.checkSelfPermission(this,
@@ -65,6 +77,7 @@ public class Bacon1 extends Activity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if ((checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)){
             Intent viewIntent2 = new Intent(this, InternalStorage.class);
+            viewIntent2.putExtra("mode",1);
             startActivity(viewIntent2);
             }
 
@@ -74,10 +87,13 @@ public class Bacon1 extends Activity {
         }
         else {
             Intent viewIntent2 = new Intent(this, InternalStorage.class);
+            viewIntent2.putExtra("mode",1);
             startActivity(viewIntent2);
         }
 
     }
+
+
 
     public void onClick1(View view) {
         buttonClicked(view);
@@ -85,7 +101,8 @@ public class Bacon1 extends Activity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if ((checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)){
 
-            Intent viewIntent2 = new Intent(this, SDCard.class);
+            Intent viewIntent2 = new Intent(this, SdCardFunctionality.class);
+                viewIntent2.putExtra("mode",2);
             startActivity(viewIntent2);}
             else {
                // Toast.makeText(this,"Please allow to access storage",Toast.LENGTH_SHORT).show();
@@ -93,7 +110,8 @@ public class Bacon1 extends Activity {
         }
 
         else {
-            Intent viewIntent2 = new Intent(this, SDCard.class);
+            Intent viewIntent2 = new Intent(this, SdCardFunctionality.class);
+            viewIntent2.putExtra("mode",2);
             startActivity(viewIntent2);
         }
 

@@ -9,6 +9,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.v4.os.EnvironmentCompat;
+import android.support.v4.provider.DocumentFile;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
@@ -28,6 +29,7 @@ import com.example.dell_1.myapp3.Bacon1;
 import com.example.dell_1.myapp3.Events.ArrayEvent;
 import com.example.dell_1.myapp3.R;
 import com.example.dell_1.myapp3.Services.MethodOneTask;
+import com.example.dell_1.myapp3.Utils.AppPrefrences;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -46,11 +48,15 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
-public class InternalStorage extends AppCompatActivity implements MyRecyclerViewAdapter.ItemClickListener {
-    MyRecyclerViewAdapter adapter;
+/**
+ * Created by MirsMAC on 29/03/2018.
+ */
+
+public class SdCardFunctionality extends AppCompatActivity implements MyRecyclerViewAdapter_sd.ItemClickListener {
+    MyRecyclerViewAdapter_sd adapter;
     MenuItem mSort, mSettings, mRename, mSelectAll, mProperties, mCreate;
     ArrayList<String> myList, myList2, selected;
-    String path ;
+    String path;
     public static boolean selectallflag = false;
     public static boolean cutbuttonclicked = false;
     RecyclerView recyclerView;
@@ -74,7 +80,10 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
     //    private FetchFilesTask mFetchFilesTask;
     ArrayList<String> copyTask = new ArrayList<>();
     ImageButton button3, button4, buttoncut, button2, buttonpaste;
-    int mode=0;
+    int mode = 0;
+
+    Uri treeUri;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -86,25 +95,31 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
         topToolBar.setTitle("");
         topToolBar.setSubtitle("");
         topToolBar.setLogoDescription(getResources().getString(R.string.logo_desc));
+        appPrefrences=new AppPrefrences(this);
 
-        mode=getIntent().getIntExtra("mode",1);
+        mode = getIntent().getIntExtra("mode", 1);
 
-        if(mode==2){
+
+
+        if (mode == 2) {
             path = getExternalSdCardPath();
-        }else
-        path = Environment.getExternalStorageDirectory().getAbsolutePath();
+            if(appPrefrences.getDefaultPath()==null){
+                appPrefrences.setDefaultPath(path);
+            }
+        } else
+            path = Environment.getExternalStorageDirectory().getAbsolutePath();
 
 
 
-        if(path==null)
+        if (path == null)
             finish();
 
-        f= new File(path);
+        f = new File(path);
 
         dirStack = new ArrayList<>();
         dirStack.add(f.getAbsolutePath());
 
-        pd = new ProgressDialog(InternalStorage.this);
+        pd = new ProgressDialog(SdCardFunctionality.this);
 
 
         currentpath = f.getAbsolutePath();
@@ -145,28 +160,6 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
 
         buttonpaste.setVisibility(View.GONE);
 
-//        final Bundle exe = getIntent().getExtras();
-//        if (exe != null) {
-//            f1 = new File(exe.getString("DIR_PATH"));
-//            Log.v(TAG, f1.toString());
-//            if (f1.equals(new File("/storage/emulated"))) {
-//                Intent intent = new Intent(this, Bacon1.class);
-//                startActivity(intent);
-//            }
-////            mFetchFilesTask.cancel(true);
-////            mFetchFilesTask.execute(f1.getAbsolutePath());
-//            // method2(f1);
-//            method1(f1);
-//            if (cutbuttonclicked) {
-//                button2.setVisibility(View.GONE);
-//                button3.setVisibility(View.GONE);
-//                button4.setVisibility(View.GONE);
-//                buttoncut.setVisibility(View.GONE);
-//                buttonpaste.setVisibility(View.VISIBLE);
-//            }
-//            adapterFlag = true;
-//            //setAdapter(true);
-//        }
 
         buttonpaste.setOnClickListener(
                 new View.OnClickListener() {
@@ -211,7 +204,7 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
                 new View.OnClickListener() {
                     public void onClick(View view) {
 
-                        AlertDialog.Builder builder1 = new AlertDialog.Builder(InternalStorage.this);
+                        AlertDialog.Builder builder1 = new AlertDialog.Builder(SdCardFunctionality.this);
                         builder1.setMessage("Are you sure you want to delete it ?");
                         builder1.setCancelable(true);
 
@@ -219,8 +212,24 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
                                 "Yes",
                                 new DialogInterface.OnClickListener() {
                                     public void onClick(DialogInterface dialog, int id) {
-                                        adapter.deleteItem();
+                                        //adapter.deleteItem();
                                         //method1(currentFile);
+                                        Log.v(TAG,"here");
+                                        deletebuttonclicked=true;
+                                        if(!appPrefrences.getIsGranted()){
+
+                                            if(appPrefrences.getUri()==null) {
+                                                access();
+                                            }
+
+
+                                        }
+
+                                        else{
+
+                                            deleteDirectory();
+
+                                        }
 
                                     }
                                 });
@@ -262,26 +271,25 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
 
                 boolean addPath = false;
 
-                if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                     addPath = Environment.isExternalStorageRemovable(file);
-                }
-                else{
+                } else {
                     addPath = Environment.MEDIA_MOUNTED.equals(EnvironmentCompat.getStorageState(file));
                 }
 
-                if(addPath){
+                if (addPath) {
                     results.add(path);
                 }
             }
         }
 
-        if(results.isEmpty()) { //Method 2 for all versions
+        if (results.isEmpty()) { //Method 2 for all versions
             // better variation of: http://stackoverflow.com/a/40123073/5002496
             String output = "";
             try {
                 final Process process = new ProcessBuilder().command("mount | grep /dev/block/vold")
                         .redirectErrorStream(true).start();
-                Log.v(TAG,"HI");
+                Log.v(TAG, "HI");
                 process.waitFor();
                 final InputStream is = process.getInputStream();
                 final byte[] buffer = new byte[1024];
@@ -294,16 +302,16 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
             } catch (final Exception e) {
                 e.printStackTrace();
             }
-            if(!output.trim().isEmpty()) {
+            if (!output.trim().isEmpty()) {
                 String devicePoints[] = output.split("\n");
-                for(String voldPoint: devicePoints) {
+                for (String voldPoint : devicePoints) {
                     results.add(voldPoint.split(" ")[2]);
                 }
             }
         }
 
         //Below few lines is to remove paths which may not be external memory card, like OTG (feel free to comment them out)
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             for (int i = 0; i < results.size(); i++) {
                 if (!results.get(i).toLowerCase().matches(".*[0-9a-f]{4}[-][0-9a-f]{4}")) {
                     Log.d(TAG, results.get(i) + " might not be extSDcard");
@@ -313,7 +321,7 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
         } else {
             for (int i = 0; i < results.size(); i++) {
                 if (!results.get(i).toLowerCase().contains("ext") && !results.get(i).toLowerCase().contains("sdcard")) {
-                    Log.d(TAG, results.get(i)+" might not be extSDcard");
+                    Log.d(TAG, results.get(i) + " might not be extSDcard");
                     results.remove(i--);
                 }
             }
@@ -321,18 +329,18 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
         return results;
     }
 
-    public  String getExternalSdCardPath() {
+    public String getExternalSdCardPath() {
         String path = null;
         ArrayList<String> x = getExternalStorageDirectories();
-        for(int i =0; i< x.size();i++){
-           // file1 = new File(x.get(i));
-           // Log.v(TAG,file1 + "");
+        for (int i = 0; i < x.size(); i++) {
+            // file1 = new File(x.get(i));
+            // Log.v(TAG,file1 + "");
             //method1(file1);
             //method2(file1);
-            path=x.get(i);
+            path = x.get(i);
             //setAdapter();
         }
-       return path;
+        return path;
     }
 
 
@@ -420,7 +428,7 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
         //hideMenuItem();
 
         if (a == 0)
-            Toast.makeText(InternalStorage.this, "Multi Select Cleared", Toast.LENGTH_SHORT).show();
+            Toast.makeText(SdCardFunctionality.this, "Multi Select Cleared", Toast.LENGTH_SHORT).show();
     }
 
     boolean isMultiselected = false;
@@ -455,6 +463,7 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
         return true;
     }
 
+    boolean newFolderClick=false;
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Take appropriate action for each action item click
@@ -465,43 +474,67 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
 
             case R.id.action_newFolder:
                 String foldername = "New Folder2";
-                if (string1 == null) {
+                String paths=appPrefrences.getDefaultPath();
+                newFolderClick=true;
+                if(appPrefrences.getUri()==null){
+                    access();
+                }else {
+                    if (string1 == null) {
+//                        Uri u = Uri.parse(appPrefrences.getUri());
+//                        String directory = currentpath.replaceFirst(paths, "");
 
-                    dir = new File(currentpath, foldername);
-                    try {
-                        if (dir.mkdir()) {
-                            Log.v(TAG, "Directory is created");
-                            Toast.makeText(InternalStorage.this, "New Folder created with the name:"
-                                    + foldername, Toast.LENGTH_LONG).show();
-                        } else {
-                            Toast.makeText(InternalStorage.this,
-                                    "Directory is not created", Toast.LENGTH_LONG).show();
-                            Log.v(TAG, "Directory is not created");
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                } else {
-                    dir = new File(string1, foldername);
+                        DocumentFile pickedDir = DocumentFile.fromTreeUri(this, Uri.parse(appPrefrences.getUri()));
+                        pickedDir.createDirectory(foldername);
+                        Log.v(TAG, "Directory is created");
+                        Toast.makeText(SdCardFunctionality.this, "New Folder created with the name:"
+                                + foldername, Toast.LENGTH_LONG).show();
 
-                    try {
-                        if (dir.mkdir()) {
-                            Toast.makeText(InternalStorage.this, "New Folder created with the name:"
-                                    + foldername, Toast.LENGTH_LONG).show();
-                        } else {
-                            Toast.makeText(InternalStorage.this,
-                                    "Directory is not created", Toast.LENGTH_LONG).show();
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
+//                    dir = new File(Environment.getExternalStorageDirectory(), foldername);
+//                    try {
+//                        if (dir.mkdir()) {
+//                            Log.v(TAG, "Directory is created");
+//                            Toast.makeText(SdCardFunctionality.this, "New Folder created with the name:"
+//                                    + foldername, Toast.LENGTH_LONG).show();
+//                        } else {
+//                            Toast.makeText(SdCardFunctionality.this,
+//                                    "Directory is not created", Toast.LENGTH_LONG).show();
+//                            Log.v(TAG, "Directory is not created");
+//                        }
+//                    } catch (Exception e) {
+//                        e.printStackTrace();
+//                    }
+                    } else {
+//                        Uri u = Uri.parse(appPrefrences.getUri());
+//                        String directory = currentpath.replaceFirst(paths, "");
+
+                        DocumentFile pickedDir = DocumentFile.fromTreeUri(this, Uri.parse(appPrefrences.getUri()));
+                        pickedDir.createDirectory(foldername);
+
+                        Log.v(TAG, "Directory is created");
+                        Toast.makeText(SdCardFunctionality.this, "New Folder created with the name:"
+                                + foldername, Toast.LENGTH_LONG).show();
+
+                        // dir = new File(string1, foldername);
+
+//                    try {
+//                        if (dir.mkdir()) {
+//                            Toast.makeText(SdCardFunctionality.this, "New Folder created with the name:"
+//                                    + foldername, Toast.LENGTH_LONG).show();
+//                        } else {
+//                            Toast.makeText(SdCardFunctionality.this,
+//                                    "Directory is not created", Toast.LENGTH_LONG).show();
+//                        }
+//                    } catch (Exception e) {
+//                        e.printStackTrace();
+//                    }
                     }
+
+                    clearMultiSelect(1);
+                    //notifyMediaStoreScanner(dir);
+                    //adapter.notifyDataSetChanged();
+                    method1(new File(currentpath));
+                    // search action
                 }
-
-                clearMultiSelect(1);
-                notifyMediaStoreScanner(dir);
-                //adapter.notifyDataSetChanged();
-                method1(new File(currentpath));
-                // search action
                 return true;
 
             case R.id.action_sort:
@@ -556,7 +589,7 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
     @Override
     public void onBackPressed() {
 
-        if(!selectallflag) {
+        if (!selectallflag) {
             if (!isMultiselected) {
                 String currpath = null;
 
@@ -577,8 +610,8 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
                 clearMultiSelect(0);
                 method1(new File(currentpath));
             }
-        }else{
-            selectallflag=false;
+        } else {
+            selectallflag = false;
             clearMultiSelect(0);
             method1(new File(currentpath));
         }
@@ -593,9 +626,9 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
         recyclerView.setDrawingCacheEnabled(true);
         recyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_LOW);
         recyclerView.setLayoutManager(new GridLayoutManager(this, numberOfColumns));
-        adapter = new MyRecyclerViewAdapter(this, myList, myList2,
-                enableSelection, InternalStorage.this);
-        adapter.setClickListener(this);
+        adapter = new MyRecyclerViewAdapter_sd(this, myList, myList2,
+                enableSelection, SdCardFunctionality.this);
+        adapter.setClickListener( this);
 
         recyclerView.setAdapter(adapter);
     }
@@ -718,8 +751,8 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
         final CharSequence[] items = {" Name ", " Date taken", " Size ", " last modified "};
         final CharSequence[] items2 = {" Only for this folder"};
         final ArrayList seletedItems = new ArrayList();
-        // custom dialog
-        final AlertDialog.Builder builder2 = new AlertDialog.Builder(InternalStorage.this);
+// custom dialog
+        final AlertDialog.Builder builder2 = new AlertDialog.Builder(SdCardFunctionality.this);
         builder2.setTitle("SORT BY");
 
         builder2.setSingleChoiceItems(items, -1, new DialogInterface.OnClickListener() {
@@ -866,4 +899,85 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
         AlertDialog alert12 = builder.create();
         alert12.show();
     }
+
+    /////////// SD Card Components ******** //////////////////
+    AppPrefrences appPrefrences;
+    private void access(){
+
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+        // it would be "*/*".
+        //intent.setType("*/*");
+        startActivityForResult(intent, 42);
+    }
+
+    boolean deletebuttonclicked=false;
+    public void onActivityResult(int requestCode, int resultCode, Intent resultData) {
+        if (requestCode == 42) {
+            treeUri = resultData.getData();
+            appPrefrences.setUri(treeUri);
+            //appChooserAppearsOnce=true;
+            appPrefrences.sdPermissionGranted(true);
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                getContentResolver().takePersistableUriPermission(treeUri,Intent.FLAG_GRANT_READ_URI_PERMISSION & Intent.FLAG_GRANT_WRITE_URI_PERMISSION );
+            }
+            //DocumentFile pickedDir = DocumentFile.fromTreeUri(this, treeUri);
+
+            // Create a new file and write into it
+            // DocumentFile newFile = pickedDir.createFile("text/plain", "My Novel");
+            if(deletebuttonclicked){
+                deleteDirectory();
+            }else if(newFolderClick){
+                String foldername = "New Folder2";
+                DocumentFile pickedDir = DocumentFile.fromTreeUri(this, Uri.parse(appPrefrences.getUri()));
+                pickedDir.createDirectory(foldername);
+                Log.v(TAG, "Directory is created");
+                Toast.makeText(SdCardFunctionality.this, "New Folder created with the name:"
+                        + foldername, Toast.LENGTH_LONG).show();
+            }
+            //permissiongranted = true;
+            makeToast("Access Granted");
+            Log.v(TAG,"reached");
+        }
+
+    }
+
+    public void deleteDirectory() {
+
+        if(appPrefrences.getUri()!=null){
+
+            //File file2=new File(Environment.getExternalStorageDirectory(),longSelectedPath);
+
+            //Uri uu=Uri.fromFile(new File(multiselect.get(0)));
+            //String st=appPrefrences.getUri();
+            DocumentFile pickedDir= DocumentFile.fromTreeUri(this, Uri.parse(appPrefrences.getUri()));
+            DocumentFile[] documentFiles = pickedDir.listFiles() ;
+            boolean delete=false;
+            for(int i=0; i<multiselect.size();i++){
+                int a=myList2.indexOf(multiselect.get(i));
+                DocumentFile documentFile = documentFiles[myList2.indexOf(multiselect.get(i))];
+                if(documentFile.delete()){
+                    //adapter.notifyItemRemoved(fileIndex);
+                   delete=true;
+                }
+            }
+            if(delete){
+                makeToast("Deleted Files Successfully");
+                clearMultiSelect(1);
+            }
+            method1(new File(currentpath));
+
+
+            //  delete(new File(longSelectedPath));
+
+        }
+
+
+
+
+    }
+
+    public void makeToast(String str){
+        Toast.makeText(this, str,Toast.LENGTH_LONG).show();
+    }
+
 }

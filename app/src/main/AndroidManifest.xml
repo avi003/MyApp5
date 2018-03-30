@@ -38,6 +38,8 @@
             android:label="@string/title_activity_sdcard" />
         <activity android:name=".InternalMemory.InternalStorage"
             />
+        <activity android:name=".InternalMemory.SdCardFunctionality"
+            />
     </application>
 
 </manifest>

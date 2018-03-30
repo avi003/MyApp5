@@ -17,6 +17,8 @@ public class AppPrefrences {
     private String IS_Granted="is_granted";
     private String URI_Save="uri_save";
 
+    private String SavedDir="save_dir";
+
     public  AppPrefrences(Context context){
         this.mContext=context;
         sharedPreferences=context.getSharedPreferences(PREF_NAME,context.MODE_PRIVATE);
@@ -47,4 +49,14 @@ public String getUri(){
 
         return sharedPreferences.getString(URI_Save,null);
 }
+
+    public void setDefaultPath(String uri){
+
+        editor.putString(SavedDir,uri);
+        editor.commit();
+    }
+    public String getDefaultPath(){
+
+        return sharedPreferences.getString(SavedDir,null);
+    }
 }

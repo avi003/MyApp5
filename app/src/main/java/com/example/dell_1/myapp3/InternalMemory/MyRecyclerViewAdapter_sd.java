@@ -30,9 +30,9 @@ import com.squareup.picasso.Picasso;
 import java.io.File;
 import java.util.ArrayList;
 
-import static com.example.dell_1.myapp3.InternalMemory.InternalStorage.selectallflag;
+import static com.example.dell_1.myapp3.InternalMemory.SdCardFunctionality.selectallflag;
 
-public class MyRecyclerViewAdapter extends RecyclerView.Adapter<MyRecyclerViewAdapter.ViewHolder> {
+public class MyRecyclerViewAdapter_sd extends RecyclerView.Adapter<MyRecyclerViewAdapter_sd.ViewHolder> {
 
     private boolean enableSelection;
     private ArrayList<String> mData;
@@ -44,11 +44,11 @@ public class MyRecyclerViewAdapter extends RecyclerView.Adapter<MyRecyclerViewAd
     Uri uri;
     private static final String TAG = "com.example.dell_1.myapp3.InternalMemory";
     private Context context;
-    InternalStorage internal_activity=null;
+    SdCardFunctionality internal_activity=null;
 
 
-    public MyRecyclerViewAdapter(Context context, ArrayList<String> data, ArrayList<String> data2,
-                                 boolean enableSelection, InternalStorage activity_Internal) {
+    public MyRecyclerViewAdapter_sd(Context context, ArrayList<String> data, ArrayList<String> data2,
+                                 boolean enableSelection, SdCardFunctionality activity_Internal) {
         this.mInflater = LayoutInflater.from(context);
         this.mData = data;
         this.mData2 = data2;
@@ -67,12 +67,7 @@ public class MyRecyclerViewAdapter extends RecyclerView.Adapter<MyRecyclerViewAd
         this.mData2 = mData2;
     }
 
-    // inflates the cell layout from xml when needed
-    @Override
-    public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View view = mInflater.inflate(R.layout.recyclerview_item, parent, false);
-        return new ViewHolder(view);
-    }
+
 
     // total number of cells
     @Override
@@ -125,12 +120,12 @@ public class MyRecyclerViewAdapter extends RecyclerView.Adapter<MyRecyclerViewAd
 
                 selected_position = getAdapterPosition();
                 if (internal_activity.multiselect.contains(mData2.get(selected_position))) {
-                   // internal_activity.multiselect.remove(mData2.get(selected_position));
+                    // internal_activity.multiselect.remove(mData2.get(selected_position));
                     itemView.setBackgroundColor(Color.TRANSPARENT);// remove item from list;
                     // update view (v) state here
                     // eg: remove highlight
                 } else {
-                   // internal_activity.multiselect.add(mData2.get(selected_position));
+                    // internal_activity.multiselect.add(mData2.get(selected_position));
                     itemView.setBackgroundColor(Color.LTGRAY);
                     // add item to list
                     // update view (v) state here
@@ -231,9 +226,17 @@ public class MyRecyclerViewAdapter extends RecyclerView.Adapter<MyRecyclerViewAd
         return uri;
     }
 
+    @Override
+    public MyRecyclerViewAdapter_sd.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        View view = mInflater.inflate(R.layout.recyclerview_item, parent, false);
+        return new MyRecyclerViewAdapter_sd.ViewHolder(view);
+    }
+
+
+
     // binds the data to the textview in each cell
     @Override
-    public void onBindViewHolder(ViewHolder holder, int position) {
+    public void onBindViewHolder(MyRecyclerViewAdapter_sd.ViewHolder holder, int position) {
         String animal = mData.get(position);
 //        int THUMBSIZE = 150;
 //        Bitmap ThumbImage = ThumbnailUtils.extractThumbnail(BitmapFactory.decodeFile(animal2),
@@ -281,6 +284,7 @@ public class MyRecyclerViewAdapter extends RecyclerView.Adapter<MyRecyclerViewAd
             holder.itemView.setBackgroundColor(Color.MAGENTA);
         }
     }
+
 
 
 

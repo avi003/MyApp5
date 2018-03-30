@@ -241,7 +241,7 @@ boolean appChooserAppearsOnce=false;
         recyclerView = (RecyclerView) findViewById(R.id.rvNumbers);
         int numberOfColumns = 4;
         recyclerView.setLayoutManager(new GridLayoutManager(this, numberOfColumns));
-        adapter = new MyRecyclerViewAdapter(this, myList, myList2, true);
+       // adapter = new MyRecyclerViewAdapter(this, myList, myList2, true);
         adapter.setClickListener(this);
         recyclerView.setAdapter(adapter);
     }
@@ -517,8 +517,8 @@ boolean appChooserAppearsOnce=false;
 
     public void onActivityResult(int requestCode, int resultCode, Intent resultData) {
         if (resultCode == RESULT_OK) {
-              treeUri = resultData.getData();
-              appPrefrences.setUri(treeUri);
+            treeUri = resultData.getData();
+            appPrefrences.setUri(treeUri);
             appChooserAppearsOnce=true;
             appPrefrences.sdPermissionGranted(true);
             if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
