@@ -511,11 +511,14 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
                 return true;
 
             case R.id.action_rename:
-                etRenameFile.setText(myList.get(fileIndex));
-                etRenameFile.setTextColor(getResources().getColor(R.color.colorBlack));
-                etRenameFile.selectAll();
-                alert.show();
-                Log.i("ZAA", "Image Gallery action rename");
+                if(!multiselect.isEmpty()) {
+                    int index= myList2.indexOf(multiselect.get(0));
+                    etRenameFile.setText(myList.get(index));
+                    etRenameFile.setTextColor(getResources().getColor(R.color.colorBlack));
+                    etRenameFile.selectAll();
+                    alert.show();
+                    Log.i("ZAA", "Image Gallery action rename");
+                }
                 // location found
                 return true;
 
@@ -681,13 +684,15 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
 
     private void renameFileAlert() {
 
-        String renameFile = etRenameFile.getText().toString();
-        String filename = myList.get(fileIndex);
+        int index= myList2.indexOf(multiselect.get(0));
 
-        File oldFilePath = new File(myList2.get(fileIndex));
+        String renameFile = etRenameFile.getText().toString();
+        String filename = myList.get(index);
+
+        File oldFilePath = new File(myList2.get(index));
 // Log.d("OLDFILEPATH", oldFilePath.toString());
 
-        x = myList2.get(fileIndex);
+        x = myList2.get(index);
 
 
         File renamedFile = new File(x.replace(filename, renameFile));
@@ -709,6 +714,7 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
         Log.e(TAG, "renameFileAlert: " + renamedFile.getPath());
 
         notifyMediaStoreScanner(renamedFile);
+        method1(new File(currentpath));
 
     }
 
