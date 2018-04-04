@@ -84,6 +84,13 @@ boolean appChooserAppearsOnce=false;
 
         String extPath = getExternalSdCardPath();
 
+        if(!appPrefrences.getIsGranted()){
+
+            access();
+
+
+        }
+
 //        if (extPath == null)
 //            Toast.makeText(this, "No SDCARD Available", Toast.LENGTH_SHORT).show();
 //        else{

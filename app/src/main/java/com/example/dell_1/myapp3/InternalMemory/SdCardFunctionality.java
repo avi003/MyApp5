@@ -30,6 +30,7 @@ import com.example.dell_1.myapp3.Events.ArrayEvent;
 import com.example.dell_1.myapp3.R;
 import com.example.dell_1.myapp3.Services.MethodOneTask;
 import com.example.dell_1.myapp3.Utils.AppPrefrences;
+import com.example.dell_1.myapp3.Utils.SdCardDirectoryManipulator;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -55,7 +56,7 @@ import java.util.List;
 public class SdCardFunctionality extends AppCompatActivity implements MyRecyclerViewAdapter_sd.ItemClickListener {
     MyRecyclerViewAdapter_sd adapter;
     MenuItem mSort, mSettings, mRename, mSelectAll, mProperties, mCreate;
-    ArrayList<String> myList, myList2, selected;
+    public ArrayList<String> myList, myList2, selected;
     String path;
     public static boolean selectallflag = false;
     public static boolean cutbuttonclicked = false;
@@ -76,13 +77,14 @@ public class SdCardFunctionality extends AppCompatActivity implements MyRecycler
 
     //flag to check if any cut operation is performed in the previous screen
     private boolean isSelectedInPrev;
-    private ArrayList<String> dirStack;
+    public ArrayList<String> dirStack;
     //    private FetchFilesTask mFetchFilesTask;
-    ArrayList<String> copyTask = new ArrayList<>();
+    public ArrayList<String> copyTask = new ArrayList<>();
     ImageButton button3, button4, buttoncut, button2, buttonpaste;
     int mode = 0;
 
     Uri treeUri;
+    SdCardDirectoryManipulator manipulator;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -100,6 +102,7 @@ public class SdCardFunctionality extends AppCompatActivity implements MyRecycler
         mode = getIntent().getIntExtra("mode", 1);
 
 
+        manipulator=new SdCardDirectoryManipulator(this,this);
 
         if (mode == 2) {
             path = getExternalSdCardPath();
@@ -122,6 +125,15 @@ public class SdCardFunctionality extends AppCompatActivity implements MyRecycler
         pd = new ProgressDialog(SdCardFunctionality.this);
 
 
+        if(!appPrefrences.getIsGranted()){
+
+            access();
+
+
+        }else{
+            manipulator.InitializeCurrentDirAfterPermission();
+        }
+
         currentpath = f.getAbsolutePath();
         method1(f);
         //method2(f);
@@ -130,25 +142,7 @@ public class SdCardFunctionality extends AppCompatActivity implements MyRecycler
         adapterFlag = true;
         //setAdapter(true);
 
-        alert = new AlertDialog.Builder(this);
-        etRenameFile = new EditText(getApplicationContext());
-        alert.setTitle("Do you want to rename the file?");
-        alert.setMessage(" ");
-        alert.setView(etRenameFile);
 
-        alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-            public void onClick(final DialogInterface dialog, int whichButton) {
-                renameFileAlert();
-                dialog.cancel();
-//                adapter.notifyDataSetChanged();
-            }
-        });
-
-        alert.setNegativeButton("cancel", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int whichButton) {
-// what ever you want to do with No option.
-            }
-        });
         recyclerView = (RecyclerView) findViewById(R.id.rvNumbers);
 
         button3 = (ImageButton) findViewById(R.id.button3);
@@ -165,6 +159,7 @@ public class SdCardFunctionality extends AppCompatActivity implements MyRecycler
                 new View.OnClickListener() {
                     public void onClick(View view) {
                         moveItem(isCopy);
+
                         copyTask.clear();
                     }
                 }
@@ -178,6 +173,7 @@ public class SdCardFunctionality extends AppCompatActivity implements MyRecycler
                 clearMultiSelect(1);
                 OnClick(v);
                 isCopy = true;
+                manipulator.copyFilesLoc();
                 method1(new File(currentpath));
 
                 //moveItem();
@@ -192,6 +188,7 @@ public class SdCardFunctionality extends AppCompatActivity implements MyRecycler
                 clearMultiSelect(1);
                 OnClick(v);
                 isCopy = false;
+                manipulator.copyFilesLoc();
                 method1(new File(currentpath));
 
                 //moveItem();
@@ -256,6 +253,39 @@ public class SdCardFunctionality extends AppCompatActivity implements MyRecycler
                     }
                 }
         );
+    }
+
+    public void createAlertRename(){
+        alert = new AlertDialog.Builder(this);
+
+        etRenameFile = new EditText(getApplicationContext());
+        etRenameFile.setText(myList.get(fileIndex));
+        etRenameFile.setTextColor(getResources().getColor(R.color.colorBlack));
+        etRenameFile.selectAll();
+
+        alert.setTitle("Do you want to rename the file?");
+        alert.setMessage(" ");
+        alert.setView(etRenameFile);
+
+        alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+            public void onClick(final DialogInterface dialog, int whichButton) {
+                //renameFileAlert();
+                String renameFile = etRenameFile.getText().toString();
+                manipulator.renameFolder(renameFile);
+                clearMultiSelect(1);
+                method1(new File(currentpath));
+                dialog.cancel();
+//                adapter.notifyDataSetChanged();
+            }
+        });
+
+        alert.setNegativeButton("cancel", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int whichButton) {
+// what ever you want to do with No option.
+            }
+        });
+
+        alert.show();
     }
 
 
@@ -355,6 +385,7 @@ public class SdCardFunctionality extends AppCompatActivity implements MyRecycler
     }
 
     String currentpath = "";
+    String currentUri="";
 
     @Override
     public void onItemClick(View view, int position) {
@@ -368,6 +399,9 @@ public class SdCardFunctionality extends AppCompatActivity implements MyRecycler
                 if (!dirStack.contains(directory.getAbsolutePath())) {
                     dirStack.add(directory.getAbsolutePath());
                     currentpath = directory.getAbsolutePath();
+                    //saving the URI
+                    manipulator.saveIndex(myList2.indexOf(string1));
+                    //currentUri
                 }
 
                 adapter = null;
@@ -432,7 +466,7 @@ public class SdCardFunctionality extends AppCompatActivity implements MyRecycler
     }
 
     boolean isMultiselected = false;
-    ArrayList<String> multiselect = new ArrayList<>();
+    public ArrayList<String> multiselect = new ArrayList<>();
 
     @Override
     public boolean onLongClick(View view, int position) {
@@ -482,37 +516,23 @@ public class SdCardFunctionality extends AppCompatActivity implements MyRecycler
                     if (string1 == null) {
 //                        Uri u = Uri.parse(appPrefrences.getUri());
 //                        String directory = currentpath.replaceFirst(paths, "");
+                            manipulator.createNewFolder();
+//                        DocumentFile pickedDir = DocumentFile.fromTreeUri(this, Uri.parse(appPrefrences.getUri()));
+//                        pickedDir.createDirectory(foldername);
+//                        Log.v(TAG, "Directory is created");
+//                        Toast.makeText(SdCardFunctionality.this, "New Folder created with the name:"
+//                                + foldername, Toast.LENGTH_LONG).show();
 
-                        DocumentFile pickedDir = DocumentFile.fromTreeUri(this, Uri.parse(appPrefrences.getUri()));
-                        pickedDir.createDirectory(foldername);
-                        Log.v(TAG, "Directory is created");
-                        Toast.makeText(SdCardFunctionality.this, "New Folder created with the name:"
-                                + foldername, Toast.LENGTH_LONG).show();
-
-//                    dir = new File(Environment.getExternalStorageDirectory(), foldername);
-//                    try {
-//                        if (dir.mkdir()) {
-//                            Log.v(TAG, "Directory is created");
-//                            Toast.makeText(SdCardFunctionality.this, "New Folder created with the name:"
-//                                    + foldername, Toast.LENGTH_LONG).show();
-//                        } else {
-//                            Toast.makeText(SdCardFunctionality.this,
-//                                    "Directory is not created", Toast.LENGTH_LONG).show();
-//                            Log.v(TAG, "Directory is not created");
-//                        }
-//                    } catch (Exception e) {
-//                        e.printStackTrace();
-//                    }
                     } else {
 //                        Uri u = Uri.parse(appPrefrences.getUri());
 //                        String directory = currentpath.replaceFirst(paths, "");
-
-                        DocumentFile pickedDir = DocumentFile.fromTreeUri(this, Uri.parse(appPrefrences.getUri()));
-                        pickedDir.createDirectory(foldername);
-
-                        Log.v(TAG, "Directory is created");
-                        Toast.makeText(SdCardFunctionality.this, "New Folder created with the name:"
-                                + foldername, Toast.LENGTH_LONG).show();
+                            manipulator.createNewFolder();
+//                        DocumentFile pickedDir = DocumentFile.fromTreeUri(this, Uri.parse(appPrefrences.getUri()));
+//                        pickedDir.createDirectory(foldername);
+//
+//                        Log.v(TAG, "Directory is created");
+//                        Toast.makeText(SdCardFunctionality.this, "New Folder created with the name:"
+//                                + foldername, Toast.LENGTH_LONG).show();
 
                         // dir = new File(string1, foldername);
 
@@ -544,10 +564,8 @@ public class SdCardFunctionality extends AppCompatActivity implements MyRecycler
                 return true;
 
             case R.id.action_rename:
-                etRenameFile.setText(myList.get(fileIndex));
-                etRenameFile.setTextColor(getResources().getColor(R.color.colorBlack));
-                etRenameFile.selectAll();
-                alert.show();
+
+                createAlertRename();
                 Log.i("ZAA", "Image Gallery action rename");
                 // location found
                 return true;
@@ -600,7 +618,7 @@ public class SdCardFunctionality extends AppCompatActivity implements MyRecycler
                     currpath = dirStack.get(dirStack.size() - 1);
                     currentpath = currpath;
 
-
+                    manipulator.backPressed();
                     method1(new File(currpath));
 
                     Log.e(TAG, "onBackPressed: " + dirStack.size() + "**" + currpath);
@@ -638,19 +656,21 @@ public class SdCardFunctionality extends AppCompatActivity implements MyRecycler
     private void moveItem(boolean isCopy) {
         //selected = adapter.getList();
         Log.v(TAG, "moveitem" + Integer.toString(copyTask.size()));
-        for (int i = 0; i < copyTask.size(); i++) {
-            File source1 = new File(copyTask.get(i));
-            destination1 = new File(currentpath + File.separator + source1.getName());
-            try {
-                moveFile(source1, destination1, isCopy);
-                notifyMediaStoreScanner(destination1);
-                myList.add(destination1.getName());
-                myList2.add(destination1.getAbsolutePath());
-                adapter.notifyDataSetChanged();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+//        for (int i = 0; i < copyTask.size(); i++) {
+//            File source1 = new File(copyTask.get(i));
+//            destination1 = new File(currentpath + File.separator + source1.getName());
+//            try {
+//                moveFile(source1, destination1, isCopy);
+//                notifyMediaStoreScanner(destination1);
+//                myList.add(destination1.getName());
+//                myList2.add(destination1.getAbsolutePath());
+//                adapter.notifyDataSetChanged();
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        }
+
+        manipulator.copyFiles(isCopy);
 
         button3.setVisibility(View.VISIBLE);
         button4.setVisibility(View.VISIBLE);
@@ -902,7 +922,7 @@ public class SdCardFunctionality extends AppCompatActivity implements MyRecycler
 
     /////////// SD Card Components ******** //////////////////
     AppPrefrences appPrefrences;
-    private void access(){
+    public void access(){
 
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
         // it would be "*/*".
@@ -915,8 +935,12 @@ public class SdCardFunctionality extends AppCompatActivity implements MyRecycler
         if (requestCode == 42) {
             treeUri = resultData.getData();
             appPrefrences.setUri(treeUri);
+            //save it
+            manipulator.saveCurrentUri(treeUri);
+
             //appChooserAppearsOnce=true;
             appPrefrences.sdPermissionGranted(true);
+            manipulator.InitializeCurrentDirAfterPermission();
             if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 getContentResolver().takePersistableUriPermission(treeUri,Intent.FLAG_GRANT_READ_URI_PERMISSION & Intent.FLAG_GRANT_WRITE_URI_PERMISSION );
             }
@@ -949,20 +973,24 @@ public class SdCardFunctionality extends AppCompatActivity implements MyRecycler
 
             //Uri uu=Uri.fromFile(new File(multiselect.get(0)));
             //String st=appPrefrences.getUri();
-            DocumentFile pickedDir= DocumentFile.fromTreeUri(this, Uri.parse(appPrefrences.getUri()));
-            DocumentFile[] documentFiles = pickedDir.listFiles() ;
+//            DocumentFile pickedDir= DocumentFile.fromTreeUri(this, Uri.parse(appPrefrences.getUri()));
+//
+//            DocumentFile[] documentFiles = pickedDir.listFiles() ;
+//            boolean delete=false;
+//            for(int i=0; i<multiselect.size();i++){
+//                int a=myList2.indexOf(multiselect.get(i));
+//                DocumentFile documentFile = documentFiles[myList2.indexOf(multiselect.get(i))];
+//
+//                if(documentFile.delete()){
+//                    //adapter.notifyItemRemoved(fileIndex);
+//                   delete=true;
+//                }
+//            }
             boolean delete=false;
-            for(int i=0; i<multiselect.size();i++){
-                int a=myList2.indexOf(multiselect.get(i));
-                DocumentFile documentFile = documentFiles[myList2.indexOf(multiselect.get(i))];
-                if(documentFile.delete()){
-                    //adapter.notifyItemRemoved(fileIndex);
-                   delete=true;
-                }
-            }
+            delete=manipulator.deleteFiles();
             if(delete){
                 makeToast("Deleted Files Successfully");
-                clearMultiSelect(1);
+                //clearMultiSelect(1);
             }
             method1(new File(currentpath));
 
@@ -979,5 +1007,7 @@ public class SdCardFunctionality extends AppCompatActivity implements MyRecycler
     public void makeToast(String str){
         Toast.makeText(this, str,Toast.LENGTH_LONG).show();
     }
+
+
 
 }

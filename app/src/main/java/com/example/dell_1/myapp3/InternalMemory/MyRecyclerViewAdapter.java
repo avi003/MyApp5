@@ -168,7 +168,7 @@ public class MyRecyclerViewAdapter extends RecyclerView.Adapter<MyRecyclerViewAd
             if (file.isDirectory()) {
                 String[] children = file.list();
                 for (int j = 0; j < children.length; j++) {
-                    new File(file, children[i]).delete();
+                    new File(file, children[j]).delete();
 //                    mData2.remove(internal_activity.multiselect.get(i));
                 }
             }
@@ -211,6 +211,7 @@ public class MyRecyclerViewAdapter extends RecyclerView.Adapter<MyRecyclerViewAd
     }
 
     protected void selectAll() {
+        internal_activity.multiselect.clear();
         internal_activity.multiselect.addAll(mData2);
         Log.v(TAG, Integer.toString(internal_activity.multiselect.size()));
     }

@@ -110,9 +110,15 @@ public class Bacon1 extends Activity {
         }
 
         else {
-            Intent viewIntent2 = new Intent(this, SdCardFunctionality.class);
-            viewIntent2.putExtra("mode",2);
-            startActivity(viewIntent2);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                Intent viewIntent2 = new Intent(this, SdCardFunctionality.class);
+                viewIntent2.putExtra("mode", 2);
+                startActivity(viewIntent2);
+            }else{
+                Intent viewIntent2 = new Intent(this, InternalStorage.class);
+                viewIntent2.putExtra("mode",2);
+                startActivity(viewIntent2);
+            }
         }
 
     }

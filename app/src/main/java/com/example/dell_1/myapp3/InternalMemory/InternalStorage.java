@@ -8,6 +8,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.support.v4.os.EnvironmentCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -123,7 +124,7 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
 
         alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
             public void onClick(final DialogInterface dialog, int whichButton) {
-                renameFileAlert();
+                //renameFileAlert();
                 dialog.cancel();
 //                adapter.notifyDataSetChanged();
             }
@@ -167,6 +168,9 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
 //            adapterFlag = true;
 //            //setAdapter(true);
 //        }
+
+
+
 
         buttonpaste.setOnClickListener(
                 new View.OnClickListener() {
@@ -256,6 +260,7 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) { //Method 1 for KitKat & above
             File[] externalDirs = getExternalFilesDirs(null);
+
 
             for (File file : externalDirs) {
                 String path = file.getPath().split("/Android")[0];
@@ -410,6 +415,8 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
                 multiselect.add(myList2.get(position));
             else
                 multiselect.remove(myList2.get(position));
+
+            hideMenuItem();
         }
     }
 
@@ -417,7 +424,7 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
         isMultiselected = false;
         multiselect.clear();
         fileIndex = 0;
-        //hideMenuItem();
+        hideMenuItem();
 
         if (a == 0)
             Toast.makeText(InternalStorage.this, "Multi Select Cleared", Toast.LENGTH_SHORT).show();
@@ -436,6 +443,7 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
             multiselect.remove(myList2.get(position));
 
         fileIndex = position;
+
         hideMenuItem();
         return true;
     }
@@ -512,11 +520,7 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
 
             case R.id.action_rename:
                 if(!multiselect.isEmpty()) {
-                    int index= myList2.indexOf(multiselect.get(0));
-                    etRenameFile.setText(myList.get(index));
-                    etRenameFile.setTextColor(getResources().getColor(R.color.colorBlack));
-                    etRenameFile.selectAll();
-                    alert.show();
+                    createAlertRename();
                     Log.i("ZAA", "Image Gallery action rename");
                 }
                 // location found
@@ -540,18 +544,54 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
         }
     }
 
+    public void createAlertRename(){
+        alert = new AlertDialog.Builder(this);
+
+        etRenameFile = new EditText(getApplicationContext());
+        etRenameFile.setText(myList.get(fileIndex));
+        etRenameFile.setTextColor(getResources().getColor(R.color.colorBlack));
+        etRenameFile.selectAll();
+
+        alert.setTitle("Do you want to rename the file?");
+        alert.setMessage(" ");
+        alert.setView(etRenameFile);
+
+        alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+            public void onClick(final DialogInterface dialog, int whichButton) {
+                //renameFileAlert();
+                String renameFile = etRenameFile.getText().toString();
+               // manipulator.renameFolder(renameFile);
+                renameFileAlert(renameFile);
+                clearMultiSelect(1);
+                method1(new File(currentpath));
+                dialog.cancel();
+//                adapter.notifyDataSetChanged();
+            }
+        });
+
+        alert.setNegativeButton("cancel", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int whichButton) {
+// what ever you want to do with No option.
+            }
+        });
+
+        alert.show();
+    }
+
+
     ///////////// ******* MULTI CLICK HIDE ********** ////////////
     private void hideMenuItem() {
         mSort.setVisible(false);
         mSettings.setVisible(false);
-        mRename.setVisible(true);
+        mRename.setVisible(false);
         mSelectAll.setVisible(true);
-        mProperties.setVisible(true);
+        mProperties.setVisible(false);
         selected = adapter.getList();
         Log.v(TAG, Integer.toString(selected.size()) + " is the size");
-        if (selected.size() > 1) {
-            mProperties.setVisible(false);
-            mRename.setVisible(false);
+        if (multiselect.size() == 1) {
+            mProperties.setVisible(true);
+            mRename.setVisible(true);
+
         }
     }
 
@@ -682,11 +722,11 @@ public class InternalStorage extends AppCompatActivity implements MyRecyclerView
 //        }
     }
 
-    private void renameFileAlert() {
+    private void renameFileAlert(String renameFile) {
 
         int index= myList2.indexOf(multiselect.get(0));
 
-        String renameFile = etRenameFile.getText().toString();
+        //String renameFile = etRenameFile.getText().toString();
         String filename = myList.get(index);
 
         File oldFilePath = new File(myList2.get(index));
